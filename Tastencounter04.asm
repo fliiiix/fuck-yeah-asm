@@ -1,6 +1,6 @@
 ;******************************************************************************	
 ;*
-;* Dateinname:		    Tastencounter01.asm
+;* Dateinname:		    Tastencounter04.asm
 ;* Version:			    1.0
 ;*
 ;*Copyright (c) 2014, Fliiiix
@@ -59,13 +59,11 @@ Reset:	SER	    mpr			        ; Output:= LED
 Main:	
 		CLR		mpr						; clean register
 		CLR		output					; clean register
-		INC		output					; +1 to ouput register
-
 		IN		mpr, SWITCH				; load input value
 
 COUNT:									; count pressed keys
 		LSR		mpr						; shift values to the right
-		BRCS	ADDONE					; add +1 to end resultat
+		BRCS	SHIFTLEFT					; shift point to left
 		
 		CPI		mpr, 0x00				; if null
 		BRNE	COUNT					; loop with count if not 0x00
@@ -79,6 +77,12 @@ COUNT:									; count pressed keys
 ;******************************************************************************
 ; Unterprogramme
 ;******************************************************************************
-ADDONE:				
+SHIFTLEFT:				
+		CPI		mpr, 0x00				; if null
+		BRNE		ADDONE					; if null
 		LSL		output					; shift left to create a LED point instead of a counter
-		RJMP	COUNT	
+		RJMP		COUNT
+		
+ADDONE:
+		INC		output					; +1 to ouput register
+		RJMP		SHIFTLEFT
