@@ -1,0 +1,85 @@
+;******************************************************************************	
+;*
+;* Dateinname:		    4_x_4.asm
+;* Version:			    1.0
+;*
+;*Copyright (c) 2014, Fliiiix
+;*All rights reserved.
+;*
+;*Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+;*
+;*1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+;*
+;*2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+;*
+;*THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+;*THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+;*INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+;*HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+;*THE POSSIBILITY OF SUCH DAMAGE. 
+;******************************************************************************
+
+;*** Kontrollerangabe ***
+.include "m8515def.inc"
+
+		RJMP	Reset
+
+
+;*** Konstanten ***
+.equ	LED		    = PORTB		; Ausgabeport fuer LED
+.equ	LED_D	    = DDRB		; Daten Direction Port fuer LED
+
+.equ	SWITCH	    = PIND		; Eingabeport fuer SWITCH
+.equ	SWITCH_D	= DDRD		; Daten Direction Port fuer SWITCH
+
+;*** Variablen ***
+.def 	mpr	        = R16		; Multifunktionsregister
+.def 	mpr1        = R17		; Multifunktionsregister
+.def	output		= R18		; Multifunktionsregister
+
+
+
+;******************************************************************************
+; Hauptprogramm
+;******************************************************************************
+
+;*** Initialisierung ***
+Reset:	SER	    mpr			        ; Output:= LED
+		OUT	    LED_D, mpr
+
+		CLR	    mpr			        ; Input:= Schalterwerte
+		OUT	    SWITCH_D, mpr
+
+		LDI	    mpr, LOW(RAMEND)    ; Stack initialisieren
+		OUT	    SPL,mpr
+		LDI	    mpr, HIGH(RAMEND)
+		OUT	    SPH,mpr
+
+
+Main: ; Main Programm
+	IN		mpr, SWITCH					; Switches einlesen
+	//COM	mpr							; board spezifisch
+	CLR		res							; Resultat = $00
+	MOV		input_one, mpr				; input_one = mpr
+	CBR		input_one, $F0				; Nur 1. 4 bits gebraucht
+
+	SWAP	mpr							; Swap nibbles of mpr
+	MOV		input_two, mpr				; input_two = mpr
+	CBR		input_two, $F0				; Nur 1. 4 bits gebraucht
+
+LOOP: ; While
+	TST		input_two					; input_two > 0
+	BREQ	End							; Wenn true dann nicht mehr loopen
+	LSR		input_two						; Rotiere input_two nach rechts
+	BRCC	Else							; Wenn carry = 0 dann zu else
+	ADD		res, input_one						; Dem resultat um input_one erhöhen
+
+Else: ; else
+	ROL		input_one					; Rotiere input_one nach rechts
+	RJMP	LOOP						; Loop
+
+End:									; ende der While schlaufe
+	//COM		res						; board spezifisch
+	OUT		LED, res					; Resultat ausgeben
+	
+RJMP Main ; Endloschlaufe
