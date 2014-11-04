@@ -37,6 +37,9 @@
 .def 	mpr1        = R17		; Multifunktionsregister
 .def	output		= R18		; Multifunktionsregister
 
+.def	input_one	= R19		; Multifunktionsregister
+.def	input_two	= R20		; Multifunktionsregister
+
 
 
 ;******************************************************************************
